@@ -48,13 +48,21 @@ def parse_operand(operand, labels, pc):
     else:
         raise ValueError(f"Unknown operand: {operand}")
 
+def is_comment_or_empty(line):
+    """Check if line is a comment or empty"""
+    return (
+        not line or
+        line.startswith("//") or
+        line.startswith("#") and not line.startswith("#define")
+    )
+
 def first_pass(lines):
     """Record labels and constants"""
     labels = {}
     pc = 0
     for lineno, line in enumerate(lines, 1):
         line = line.strip()
-        if not line or line.startswith("//"):
+        if is_comment_or_empty(line):
             continue
         if line.startswith("#define"):
             parts = line.split()
@@ -80,7 +88,7 @@ def second_pass(lines, labels):
     pc = 0
     for lineno, line in enumerate(lines, 1):
         line = line.strip()
-        if not line or line.startswith("//") or line.startswith("#"):
+        if is_comment_or_empty(line):
             continue
         if line.endswith(":"):
             continue
