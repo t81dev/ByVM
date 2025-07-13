@@ -66,6 +66,48 @@ void meta_reflect() {
     printf("[ByVM] Patched counter value to %d\n", memory[load_addr + 2]);
 }
 
+void meta_interpret(uint8_t start_addr, uint8_t size) {
+    printf("[Meta] Dynamic interpretation triggered: start=0x%02X, size=%d bytes\n", start_addr, size);
+
+    // Save current execution context
+    uint8_t saved_pc = pc;
+    uint8_t saved_registers[NUM_REGISTERS];
+    memcpy(saved_registers, registers, NUM_REGISTERS);
+
+    // Set up a new context
+    uint8_t interp_pc = start_addr;
+    uint8_t running_interp = 1;
+
+    while (running_interp && (interp_pc < start_addr + size)) {
+        uint8_t opcode = memory[interp_pc++];
+        switch (opcode) {
+            case LOAD: {
+                uint8_t reg = memory[interp_pc++];
+                uint8_t value = memory[interp_pc++];
+                registers[reg] = value;
+                break;
+            }
+            case CALL_FFI: {
+                uint8_t func_id = memory[interp_pc++];
+                call_ffi(func_id);
+                break;
+            }
+            case HALT: {
+                running_interp = 0;
+                break;
+            }
+            default:
+                printf("[Meta-Interpret] Unknown opcode: %02X\n", opcode);
+                running_interp = 0;
+                break;
+        }
+    }
+
+    // Restore original context
+    memcpy(registers, saved_registers, NUM_REGISTERS);
+    pc = saved_pc;
+}
+
 void execute() {
     while (running) {
         uint8_t opcode = memory[pc++];
