@@ -19,6 +19,7 @@ OPCODES = {
     "META_REFLECT": 0xE2,
 }
 
+# Register mapping
 REGISTERS = {
     "R0": 0x00,
     "R1": 0x01,
@@ -26,6 +27,7 @@ REGISTERS = {
     "R3": 0x03,
 }
 
+# Constants table for #define
 CONSTANTS = {}
 
 def expand_constants(token):
@@ -39,11 +41,11 @@ def parse_operand(operand, labels, pc):
     operand = expand_constants(operand)
     if operand.upper() in REGISTERS:
         return REGISTERS[operand.upper()]
-    elif operand.startswith("0x"):
+    elif operand.startswith("0x"):  # Hex literal
         return int(operand, 16)
-    elif operand.isdigit():
+    elif operand.isdigit():         # Decimal literal
         return int(operand)
-    elif operand in labels:
+    elif operand in labels:         # Label
         return labels[operand]
     else:
         raise ValueError(f"Unknown operand: {operand}")
@@ -52,8 +54,8 @@ def is_comment_or_empty(line):
     """Check if line is a comment or empty"""
     return (
         not line or
-        line.startswith("//") or
-        line.startswith("#") and not line.startswith("#define")
+        line.strip().startswith("//") or
+        (line.strip().startswith("#") and not line.strip().lower().startswith("#define"))
     )
 
 def first_pass(lines):
@@ -64,22 +66,22 @@ def first_pass(lines):
         line = line.strip()
         if is_comment_or_empty(line):
             continue
-        if line.startswith("#define"):
+        if line.lower().startswith("#define"):  # Case-insensitive
             parts = line.split()
             if len(parts) != 3:
                 raise ValueError(f"Invalid constant definition at line {lineno}")
             CONSTANTS[parts[1]] = int(parts[2])
-        elif line.endswith(":"):
+        elif line.endswith(":"):  # Label definition
             label = line[:-1].strip()
             if label in labels:
                 raise ValueError(f"Duplicate label '{label}' at line {lineno}")
             labels[label] = pc
-        else:
+        else:  # Instruction
             parts = line.split()
             opcode = parts[0].upper()
             if opcode not in OPCODES:
                 raise ValueError(f"Unknown opcode '{opcode}' at line {lineno}")
-            pc += 1 + (len(parts) - 1)
+            pc += 1 + (len(parts) - 1)  # opcode + operands
     return labels
 
 def second_pass(lines, labels):
@@ -90,7 +92,7 @@ def second_pass(lines, labels):
         line = line.strip()
         if is_comment_or_empty(line):
             continue
-        if line.endswith(":"):
+        if line.endswith(":"):  # Label line
             continue
         parts = line.split()
         opcode = parts[0].upper()
