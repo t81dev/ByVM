@@ -28,6 +28,7 @@ This is ByVM with C-only FFI support, symbolic meta-ops, and native subtraction 
 #define SYMBOL_DEFINE  0xE0
 #define SYMBOL_APPLY   0xE1
 #define META_REFLECT   0xE2
+#define META_INTERPRET  0xE3  /* Dynamic interpreter */
 
 uint8_t memory[MEMORY_SIZE];
 uint8_t registers[NUM_REGISTERS];
