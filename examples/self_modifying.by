@@ -1,0 +1,15 @@
+// Self-modifying countdown program
+
+#define START 3
+
+start:
+    LOAD R0, START          // Set R0 = START
+    SYMBOL_DEFINE 0x01, R0  // Define symbol 1 = START
+
+loop:
+    SYMBOL_APPLY 0x01       // Print current symbol value
+    DEC R0                  // Decrement R0
+    SYMBOL_DEFINE 0x01, R0  // Update symbol 1 with new value
+    IFNZ R0, loop           // If R0 != 0, jump to loop
+    META_REFLECT            // Reflect and modify program
+    HALT
