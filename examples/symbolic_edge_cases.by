@@ -1,0 +1,2 @@
+SYMBOL_APPLY, 0x99,          // Apply undefined symbol
+HALT
