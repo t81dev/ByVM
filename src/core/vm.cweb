@@ -21,6 +21,10 @@ This is a simplified version of ByVM with C-only FFI support.
 #define POP       0x07
 #define CALL_FFI  0xF0  /* Opcode for C FFI */
 
+#define SYMBOL_DEFINE  0xE0
+#define SYMBOL_APPLY   0xE1
+#define META_REFLECT   0xE2
+
 uint8_t memory[MEMORY_SIZE];
 uint8_t registers[NUM_REGISTERS];
 uint8_t pc = 0;  // Program Counter
