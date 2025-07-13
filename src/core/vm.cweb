@@ -1,6 +1,6 @@
-@* ByVM Core | Binary Virtual Machine with C FFI Only
+@* ByVM Core | Binary Virtual Machine with C FFI and Symbolic Meta-Ops
 
-This is a simplified version of ByVM with C-only FFI support.
+This is ByVM with C-only FFI support, symbolic meta-ops, and native subtraction & conditional branching.
 
 @c
 #include <stdio.h>
@@ -13,14 +13,17 @@ This is a simplified version of ByVM with C-only FFI support.
 #define NUM_REGISTERS 4
 #define STACK_START 0xF0  /* Stack grows downward from top of memory */
 
-#define LOAD      0x01
-#define STORE     0x02
-#define ADD       0x03
-#define JUMP      0x04
-#define HALT      0x05
-#define PUSH      0x06
-#define POP       0x07
-#define CALL_FFI  0xF0  /* Opcode for C FFI */
+#define LOAD           0x01
+#define STORE          0x02
+#define ADD            0x03
+#define SUB            0x08  /* SUB R1, R2, DEST */
+#define JUMP           0x04
+#define IFNZ           0x0A  /* IFNZ R0, addr */
+#define HALT           0x05
+#define PUSH           0x06
+#define POP            0x07
+#define DEC            0x09  /* DEC R0 */
+#define CALL_FFI       0xF0  /* Opcode for C FFI */
 
 #define SYMBOL_DEFINE  0xE0
 #define SYMBOL_APPLY   0xE1
@@ -75,9 +78,31 @@ void execute() {
                 registers[dest] = registers[reg1] + registers[reg2];
                 break;
             }
+            case SUB: {
+                uint8_t reg1 = memory[pc++];
+                uint8_t reg2 = memory[pc++];
+                uint8_t dest = memory[pc++];
+                registers[dest] = registers[reg1] - registers[reg2];
+                break;
+            }
             case JUMP: {
                 uint8_t addr = memory[pc++];
                 pc = addr;
+                break;
+            }
+            case IFNZ: {
+                uint8_t reg = memory[pc++];
+                uint8_t addr = memory[pc++];
+                if (registers[reg] != 0) {
+                    pc = addr;
+                }
+                break;
+            }
+            case DEC: {
+                uint8_t reg = memory[pc++];
+                if (registers[reg] > 0) {
+                    registers[reg] -= 1;
+                }
                 break;
             }
             case PUSH: {
@@ -124,7 +149,6 @@ void execute() {
                 running = 0;
                 break;
             }
-
             default:
                 printf("Unknown opcode: %02X\n", opcode);
                 running = 0;
