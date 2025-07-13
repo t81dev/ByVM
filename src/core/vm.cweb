@@ -6,6 +6,7 @@ This is a simplified version of ByVM with C-only FFI support.
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+include <string.h>
 #include "../symbolic/symbolic.h"
 
 #define MEMORY_SIZE 256
@@ -132,17 +133,26 @@ void execute() {
     }
 }
 
-int main() {
-    // Example program: Load 42, call FFI
-    uint8_t program[] = {
-        LOAD, 0x00, 42,       // LOAD R0, 42
-        CALL_FFI, 0x01,       // Call C FFI function 1
-        CALL_FFI, 0x02,       // Call C FFI function 2
-        HALT
-    };
-
+int main(int argc, char *argv[]) {
     symbolic_init();
-    load_program(program, sizeof(program));
+
+    if (argc < 2) {
+        printf("Usage: %s <program file>\n", argv[0]);
+        return 1;
+    }
+
+    FILE *fp = fopen(argv[1], "rb");
+    if (!fp) {
+        perror("Error opening file");
+        return 1;
+    }
+
+    uint8_t buffer[MEMORY_SIZE];
+    size_t size = fread(buffer, 1, MEMORY_SIZE, fp);
+    fclose(fp);
+
+    printf("[ByVM] Loaded %zu bytes from %s\n", size, argv[1]);
+    load_program(buffer, size);
     execute();
 
     return 0;
