@@ -19,7 +19,6 @@ OPCODES = {
     "META_REFLECT": 0xE2,
 }
 
-# Register mapping
 REGISTERS = {
     "R0": 0x00,
     "R1": 0x01,
@@ -27,7 +26,6 @@ REGISTERS = {
     "R3": 0x03,
 }
 
-# Constants table for #define
 CONSTANTS = {}
 
 def expand_constants(token):
@@ -36,8 +34,12 @@ def expand_constants(token):
         return str(CONSTANTS[token])
     return token
 
+def clean_token(token):
+    """Strip trailing commas and whitespace from token"""
+    return token.strip().strip(",")
+
 def parse_operand(operand, labels, pc):
-    operand = operand.strip(",")
+    operand = clean_token(operand)
     operand = expand_constants(operand)
     if operand.upper() in REGISTERS:
         return REGISTERS[operand.upper()]
@@ -67,7 +69,7 @@ def first_pass(lines):
         line = line.strip()
         if is_comment_or_empty(line):
             continue
-        if line.lstrip().lower().startswith("#define"):  # Case-insensitive
+        if line.lstrip().lower().startswith("#define"):
             parts = line.split()
             if len(parts) != 3:
                 raise ValueError(f"Invalid constant definition at line {lineno}")
@@ -78,7 +80,7 @@ def first_pass(lines):
                 raise ValueError(f"Duplicate label '{label}' at line {lineno}")
             labels[label] = pc
         else:  # Instruction
-            parts = line.split()
+            parts = [clean_token(p) for p in line.split()]
             opcode = parts[0].upper()
             if opcode not in OPCODES:
                 raise ValueError(f"Unknown opcode '{opcode}' at line {lineno}")
@@ -95,7 +97,7 @@ def second_pass(lines, labels):
             continue
         if line.endswith(":"):  # Label line
             continue
-        parts = line.split()
+        parts = [clean_token(p) for p in line.split()]
         opcode = parts[0].upper()
         if opcode not in OPCODES:
             raise ValueError(f"Unknown opcode: {opcode}")
