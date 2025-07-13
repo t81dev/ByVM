@@ -94,6 +94,21 @@ void execute() {
                 registers[reg] = memory[sp++];
                 break;
             }
+            case SYMBOL_DEFINE: {
+                uint8_t id = memory[pc++];
+                uint8_t reg = memory[pc++];
+                symbol_define(id, registers[reg]);
+                break;
+            }
+            case SYMBOL_APPLY: {
+                uint8_t id = memory[pc++];
+                symbol_apply(id);
+                break;
+            }
+            case META_REFLECT:
+                meta_reflect();
+                break;
+            }
             case CALL_FFI: {
                 uint8_t func_id = memory[pc++];
                 call_ffi(func_id);
