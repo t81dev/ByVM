@@ -42,7 +42,7 @@ void symbol_print_all(void) {
 void symbolic_table_dump(void) {
     printf("[Symbolic] Current Symbol Table:\n");
     for (int i = 0; i < 256; ++i) {
-        if (symbol_table[i].in_use) {
+        if (symbol_table[i] != 0) { // Only print nonzero entries
             printf("  Symbol 0x%02X = %d\n", i, symbol_table[i].value);
         }
     }
