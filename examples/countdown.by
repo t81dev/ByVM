@@ -1,0 +1,6 @@
+LOAD R0, 5
+loop:
+    CALL_FFI 0x01       // Print message
+    DEC R0
+    IFNZ R0, loop
+HALT
