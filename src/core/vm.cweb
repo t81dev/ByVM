@@ -55,6 +55,16 @@ void load_program(uint8_t *program, size_t size) {
     }
 }
 
+void meta_reflect() {
+    printf("[Meta] Reflection triggered.\n");
+    symbol_table_dump();
+
+    // Patch instruction: increment counter
+    uint8_t load_addr = memory[0]; // Assume LOAD_ADDR at 0
+    memory[load_addr + 2] += 1;
+    printf("[ByVM] Patched counter value to %d\n", memory[load_addr + 2]);
+}
+
 void execute() {
     while (running) {
         uint8_t opcode = memory[pc++];
