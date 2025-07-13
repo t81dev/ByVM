@@ -1,0 +1,8 @@
+LOAD, 0x00, 42,              // LOAD R0, 42
+SYMBOL_DEFINE, 0x10, 0x00,   // Define symbol 0x10 = 42
+
+LOAD, 0x00, 7,               // LOAD R0, 7
+SYMBOL_DEFINE, 0x11, 0x00,   // Define symbol 0x11 = 7
+
+META_REFLECT,                // Print all defined symbols
+HALT
