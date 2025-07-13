@@ -24,41 +24,72 @@ REGISTERS = {
     "R3": 0x03,
 }
 
-def assemble_line(line):
-    line = line.strip()
-    if not line or line.startswith("//") or line.startswith("#"):
-        return []  # Skip comments and empty lines
+def parse_operand(operand, labels, pc):
+    operand = operand.strip(",")
+    if operand.upper() in REGISTERS:
+        return REGISTERS[operand.upper()]
+    elif operand.startswith("0x"):  # Hex literal
+        return int(operand, 16)
+    elif operand.isdigit():  # Decimal literal
+        return int(operand)
+    elif operand in labels:  # Label
+        return labels[operand]
+    else:
+        raise ValueError(f"Unknown operand: {operand}")
 
-    parts = line.split()
-    opcode = parts[0].upper()
-    if opcode not in OPCODES:
-        raise ValueError(f"Unknown opcode: {opcode}")
-
-    bytecode = [OPCODES[opcode]]
-
-    # Handle operands
-    for operand in parts[1:]:
-        operand = operand.strip(",")
-        if operand.upper() in REGISTERS:
-            bytecode.append(REGISTERS[operand.upper()])
-        elif operand.startswith("0x"):  # Hex literal
-            bytecode.append(int(operand, 16))
-        elif operand.isdigit():  # Decimal literal
-            bytecode.append(int(operand))
+def first_pass(lines):
+    """Record label positions"""
+    labels = {}
+    pc = 0  # Program counter
+    for lineno, line in enumerate(lines, 1):
+        line = line.strip()
+        if not line or line.startswith("//") or line.startswith("#"):
+            continue  # Skip comments and empty lines
+        if line.endswith(":"):
+            label = line[:-1].strip()
+            if label in labels:
+                raise ValueError(f"Duplicate label '{label}' at line {lineno}")
+            labels[label] = pc
         else:
-            raise ValueError(f"Unknown operand: {operand}")
+            parts = line.split()
+            opcode = parts[0].upper()
+            if opcode not in OPCODES:
+                raise ValueError(f"Unknown opcode '{opcode}' at line {lineno}")
+            pc += 1 + (len(parts) - 1)  # opcode + operands
+    return labels
 
-    return bytecode
+def second_pass(lines, labels):
+    """Assemble instructions with resolved labels"""
+    program = []
+    pc = 0
+    for lineno, line in enumerate(lines, 1):
+        line = line.strip()
+        if not line or line.startswith("//") or line.startswith("#"):
+            continue
+        if line.endswith(":"):
+            continue  # Label, already processed
+        parts = line.split()
+        opcode = parts[0].upper()
+        bytecode = [OPCODES[opcode]]
+        for operand in parts[1:]:
+            try:
+                bytecode.append(parse_operand(operand, labels, pc))
+            except Exception as e:
+                raise ValueError(f"Line {lineno}: {e}")
+        program.extend(bytecode)
+        pc += len(bytecode)
+    return program
 
 def assemble_file(input_path, output_path):
-    program = []
     with open(input_path, "r") as f:
-        for lineno, line in enumerate(f, 1):
-            try:
-                program.extend(assemble_line(line))
-            except Exception as e:
-                print(f"Error on line {lineno}: {e}")
-                sys.exit(1)
+        lines = f.readlines()
+
+    try:
+        labels = first_pass(lines)
+        program = second_pass(lines, labels)
+    except Exception as e:
+        print(f"[Assembler Error] {e}")
+        sys.exit(1)
 
     with open(output_path, "wb") as out:
         out.write(bytes(program))
