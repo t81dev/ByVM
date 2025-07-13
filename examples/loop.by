@@ -1,0 +1,4 @@
+start:
+    LOAD R0, 5          // Set R0 = 5
+    CALL_FFI 0x01       // Print message
+    JUMP start          // Loop forever
