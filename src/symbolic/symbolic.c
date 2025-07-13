@@ -8,6 +8,7 @@ void symbolic_init(void) {
         symbol_table[i].id = 0;
         symbol_table[i].value = 0;
     }
+    printf("[Symbolic] Symbolic table initialized.\n");
 }
 
 void symbol_define(uint8_t id, uint8_t value) {
@@ -17,9 +18,23 @@ void symbol_define(uint8_t id, uint8_t value) {
 }
 
 void symbol_apply(uint8_t id) {
-    printf("[Symbolic] Applied symbol 0x%02X = %d\n", id, symbol_table[id].value);
+    if (symbol_table[id].id != 0) {
+        printf("[Symbolic] Applied symbol 0x%02X = %d\n", id, symbol_table[id].value);
+    } else {
+        printf("[Symbolic] Undefined symbol 0x%02X\n", id);
+    }
 }
 
 void meta_reflect(void) {
-    printf("[Meta] Reflection not yet implemented.\n");
+    printf("[Meta] Reflection triggered.\n");
+    symbol_print_all();
+}
+
+void symbol_print_all(void) {
+    printf("[Symbolic] Current Symbol Table:\n");
+    for (int i = 0; i < MAX_SYMBOLS; ++i) {
+        if (symbol_table[i].id != 0) {
+            printf("  Symbol 0x%02X = %d\n", symbol_table[i].id, symbol_table[i].value);
+        }
+    }
 }
