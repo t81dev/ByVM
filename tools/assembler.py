@@ -52,10 +52,11 @@ def parse_operand(operand, labels, pc):
 
 def is_comment_or_empty(line):
     """Check if line is a comment or empty"""
+    line = line.strip()
     return (
         not line or
-        line.strip().startswith("//") or
-        (line.strip().startswith("#") and not line.strip().lower().startswith("#define"))
+        line.startswith("//") or
+        (line.startswith("#") and not line.lstrip().lower().startswith("#define"))
     )
 
 def first_pass(lines):
@@ -66,7 +67,7 @@ def first_pass(lines):
         line = line.strip()
         if is_comment_or_empty(line):
             continue
-        if line.lower().startswith("#define"):  # Case-insensitive
+        if line.lstrip().lower().startswith("#define"):  # Case-insensitive
             parts = line.split()
             if len(parts) != 3:
                 raise ValueError(f"Invalid constant definition at line {lineno}")
