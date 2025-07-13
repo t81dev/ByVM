@@ -6,7 +6,7 @@ This is a simplified version of ByVM with C-only FFI support.
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
-include <string.h>
+#include <string.h>
 #include "../symbolic/symbolic.h"
 
 #define MEMORY_SIZE 256
