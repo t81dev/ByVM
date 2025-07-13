@@ -1,0 +1,14 @@
+// Meta-Recursive Self-Modifying Counter
+
+#define LOAD_ADDR 0x00      // Where to patch LOAD R0, N
+#define START 3
+
+start:
+    LOAD R0, START          // Load initial counter value
+loop:
+    CALL_FFI 0x01           // Print message
+    DEC R0                  // Decrement counter
+    IFNZ R0, loop           // Loop if R0 != 0
+
+    META_REFLECT            // Enter reflection
+    JUMP start              // Restart with patched counter
