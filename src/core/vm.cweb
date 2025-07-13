@@ -1,6 +1,6 @@
-@* ByVM Core | Binary Virtual Machine with Stack Support
+@* ByVM Core | Binary Virtual Machine with FFI Support
 
-This extends the minimal ByVM core to support a stack, enabling PUSH and POP operations.
+This extends ByVM to support external C function calls via an FFI layer.
 
 @c
 #include <stdio.h>
@@ -11,19 +11,34 @@ This extends the minimal ByVM core to support a stack, enabling PUSH and POP ope
 #define NUM_REGISTERS 4
 #define STACK_START 0xF0  /* Stack grows downward from top of memory */
 
-#define LOAD   0x01
-#define STORE  0x02
-#define ADD    0x03
-#define JUMP   0x04
-#define HALT   0x05
-#define PUSH   0x06
-#define POP    0x07
+#define LOAD      0x01
+#define STORE     0x02
+#define ADD       0x03
+#define JUMP      0x04
+#define HALT      0x05
+#define PUSH      0x06
+#define POP       0x07
+#define CALL_FFI  0xF0  /* New opcode for FFI */
 
 uint8_t memory[MEMORY_SIZE];
 uint8_t registers[NUM_REGISTERS];
 uint8_t pc = 0;  // Program Counter
 uint8_t sp = STACK_START;  // Stack Pointer
 uint8_t running = 1;
+
+void call_ffi(uint8_t func_id) {
+    switch (func_id) {
+        case 0x01:
+            printf("[FFI] Hello from C function!\n");
+            break;
+        case 0x02:
+            printf("[FFI] Value in Register 0: %d\n", registers[0]);
+            break;
+        default:
+            printf("[FFI] Unknown external function: %d\n", func_id);
+            break;
+    }
+}
 
 void load_program(uint8_t *program, size_t size) {
     for (size_t i = 0; i < size && i < MEMORY_SIZE; ++i) {
@@ -79,6 +94,11 @@ void execute() {
                 registers[reg] = memory[sp++];
                 break;
             }
+            case CALL_FFI: {
+                uint8_t func_id = memory[pc++];
+                call_ffi(func_id);
+                break;
+            }
             case HALT:
                 running = 0;
                 break;
@@ -91,18 +111,16 @@ void execute() {
 }
 
 int main() {
-    // Example program: Push 42, Pop into R0, store in memory[0x20]
+    // Example program: Load 99 into R0, call FFI function 1, call FFI function 2
     uint8_t program[] = {
-        LOAD, 0x00, 42,     // LOAD R0, 42
-        PUSH, 0x00,         // PUSH R0
-        POP, 0x01,          // POP into R1
-        STORE, 0x01, 0x20,  // STORE R1 -> memory[0x20]
+        LOAD, 0x00, 99,       // LOAD R0, 99
+        CALL_FFI, 0x01,       // Call FFI function 1
+        CALL_FFI, 0x02,       // Call FFI function 2
         HALT
     };
 
     load_program(program, sizeof(program));
     execute();
 
-    printf("Result stored at memory[0x20]: %d\n", memory[0x20]);
     return 0;
 }
