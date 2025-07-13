@@ -1,0 +1,23 @@
+// Load 10 into R0
+LOAD, 0x00, 10,            // LOAD R0, 10
+
+// Define symbol 0x01 with value in R0
+SYMBOL_DEFINE, 0x01, 0x00, // Define symbol ID 1 = 10
+
+// Apply symbol 0x01
+SYMBOL_APPLY, 0x01,        // Should print: Applied symbol 0x01 = 10
+
+// Load 20 into R1
+LOAD, 0x01, 20,            // LOAD R1, 20
+
+// Define symbol 0x02 with value in R1
+SYMBOL_DEFINE, 0x02, 0x01, // Define symbol ID 2 = 20
+
+// Apply symbol 0x02
+SYMBOL_APPLY, 0x02,        // Should print: Applied symbol 0x02 = 20
+
+// Trigger Meta Reflection
+META_REFLECT,              // Should print the symbol table
+
+// End program
+HALT
