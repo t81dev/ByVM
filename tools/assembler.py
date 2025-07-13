@@ -6,12 +6,13 @@ OPCODES = {
     "LOAD": 0x01,
     "STORE": 0x02,
     "ADD": 0x03,
-    "SUB": 0x08,           # New opcode: SUB (subtract)
+    "SUB": 0x08,           # Subtract
     "JUMP": 0x04,
-    "IFNZ": 0x09,          # New opcode: Jump if Not Zero
+    "IFNZ": 0x0A,          # Jump if Not Zero
     "HALT": 0x05,
     "PUSH": 0x06,
     "POP": 0x07,
+    "DEC": 0x09,           # Decrement
     "CALL_FFI": 0xF0,
     "SYMBOL_DEFINE": 0xE0,
     "SYMBOL_APPLY": 0xE1,
@@ -27,44 +28,33 @@ REGISTERS = {
 
 CONSTANTS = {}
 
-def expand_pseudo(opcode, operands):
-    """Expand pseudo-instructions into real opcodes"""
-    if opcode == "DEC":
-        # DEC R0 => LOAD R1, 1; SUB R0, R1, R0
-        return [
-            ["LOAD", operands[0], "1"],
-            ["SUB", operands[0], "R1", operands[0]],
-        ]
-    elif opcode == "INC":
-        # INC R0 => LOAD R1, 1; ADD R0, R1, R0
-        return [
-            ["LOAD", operands[0], "1"],
-            ["ADD", operands[0], "R1", operands[0]],
-        ]
-    else:
-        return [[opcode] + operands]
+def expand_constants(token):
+    """Replace constants in operands."""
+    if token in CONSTANTS:
+        return str(CONSTANTS[token])
+    return token
 
 def parse_operand(operand, labels, pc):
     operand = operand.strip(",")
+    operand = expand_constants(operand)
     if operand.upper() in REGISTERS:
         return REGISTERS[operand.upper()]
     elif operand.startswith("0x"):
         return int(operand, 16)
     elif operand.isdigit():
         return int(operand)
-    elif operand in CONSTANTS:
-        return CONSTANTS[operand]
     elif operand in labels:
         return labels[operand]
     else:
         raise ValueError(f"Unknown operand: {operand}")
 
 def first_pass(lines):
+    """Record labels and constants"""
     labels = {}
     pc = 0
     for lineno, line in enumerate(lines, 1):
         line = line.strip()
-        if not line or line.startswith("//") or line.startswith("#"):
+        if not line or line.startswith("//"):
             continue
         if line.startswith("#define"):
             parts = line.split()
@@ -78,31 +68,31 @@ def first_pass(lines):
             labels[label] = pc
         else:
             parts = line.split()
-            pseudo_expansion = expand_pseudo(parts[0].upper(), parts[1:])
-            for instr in pseudo_expansion:
-                pc += 1 + (len(instr) - 1)
+            opcode = parts[0].upper()
+            if opcode not in OPCODES:
+                raise ValueError(f"Unknown opcode '{opcode}' at line {lineno}")
+            pc += 1 + (len(parts) - 1)
     return labels
 
 def second_pass(lines, labels):
+    """Assemble instructions with resolved labels and constants"""
     program = []
     pc = 0
     for lineno, line in enumerate(lines, 1):
         line = line.strip()
         if not line or line.startswith("//") or line.startswith("#"):
             continue
-        if line.startswith("#define") or line.endswith(":"):
+        if line.endswith(":"):
             continue
         parts = line.split()
-        pseudo_expansion = expand_pseudo(parts[0].upper(), parts[1:])
-        for instr in pseudo_expansion:
-            opcode = instr[0].upper()
-            if opcode not in OPCODES:
-                raise ValueError(f"Unknown opcode: {opcode}")
-            bytecode = [OPCODES[opcode]]
-            for operand in instr[1:]:
-                bytecode.append(parse_operand(operand, labels, pc))
-            program.extend(bytecode)
-            pc += len(bytecode)
+        opcode = parts[0].upper()
+        if opcode not in OPCODES:
+            raise ValueError(f"Unknown opcode: {opcode}")
+        bytecode = [OPCODES[opcode]]
+        for operand in parts[1:]:
+            bytecode.append(parse_operand(operand, labels, pc))
+        program.extend(bytecode)
+        pc += len(bytecode)
     return program
 
 def assemble_file(input_path, output_path):
