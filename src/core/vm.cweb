@@ -58,7 +58,7 @@ void load_program(uint8_t *program, size_t size) {
 
 void meta_reflect() {
     printf("[Meta] Reflection triggered.\n");
-    symbol_table_dump();
+    symbolic_table_dump();
 
     // Patch instruction: increment counter
     uint8_t load_addr = memory[0]; // Assume LOAD_ADDR at 0
