@@ -193,6 +193,14 @@ void execute() {
                 meta_reflect();
                 break;
             }
+
+            case META_INTERPRET: {
+                uint8_t start_addr = memory[pc++];
+                uint8_t size = memory[pc++];
+                meta_interpret(start_addr, size);
+                break;
+            }
+
             case CALL_FFI: {
                 uint8_t func_id = memory[pc++];
                 call_ffi(func_id);
