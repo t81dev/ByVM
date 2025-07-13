@@ -22,6 +22,9 @@ void symbol_apply(uint8_t id);
 // Perform meta-reflection (placeholder)
 void meta_reflect(void);
 
+// Perform symbolic table dump
+void symbolic_table_dump(void);
+
 // Debug: Print all symbols
 void symbol_print_all(void);
 
