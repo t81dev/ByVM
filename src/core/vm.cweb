@@ -1,24 +1,25 @@
-@* ByVM Core | Binary Virtual Machine with FFI Support
+@* ByVM Core | Binary Virtual Machine with Python FFI
 
-This extends ByVM to support external C function calls via an FFI layer.
+This version extends the FFI to support calling Python functions.
 
 @c
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <Python.h>  // Python C API header
 
 #define MEMORY_SIZE 256
 #define NUM_REGISTERS 4
 #define STACK_START 0xF0  /* Stack grows downward from top of memory */
 
-#define LOAD      0x01
-#define STORE     0x02
-#define ADD       0x03
-#define JUMP      0x04
-#define HALT      0x05
-#define PUSH      0x06
-#define POP       0x07
-#define CALL_FFI  0xF0  /* New opcode for FFI */
+#define LOAD       0x01
+#define STORE      0x02
+#define ADD        0x03
+#define JUMP       0x04
+#define HALT       0x05
+#define PUSH       0x06
+#define POP        0x07
+#define CALL_FFI   0xF0  /* Opcode for C/Python FFI */
 
 uint8_t memory[MEMORY_SIZE];
 uint8_t registers[NUM_REGISTERS];
@@ -26,13 +27,59 @@ uint8_t pc = 0;  // Program Counter
 uint8_t sp = STACK_START;  // Stack Pointer
 uint8_t running = 1;
 
+void call_python_function(const char *func_name) {
+    PyObject *pName, *pModule, *pFunc;
+    PyObject *pValue;
+
+    Py_Initialize();
+
+    // Load the Python script (ffi_python_plugin.py)
+    pName = PyUnicode_DecodeFSDefault("ffi_python_plugin");
+    pModule = PyImport_Import(pName);
+    Py_DECREF(pName);
+
+    if (pModule != NULL) {
+        // Get the function by name
+        pFunc = PyObject_GetAttrString(pModule, func_name);
+        if (pFunc && PyCallable_Check(pFunc)) {
+            // Call the function with no arguments
+            pValue = PyObject_CallObject(pFunc, NULL);
+            if (pValue != NULL) {
+                printf("[Python FFI] Function '%s' returned: ", func_name);
+                PyObject_Print(pValue, stdout, 0);
+                printf("\n");
+                Py_DECREF(pValue);
+            } else {
+                PyErr_Print();
+                fprintf(stderr, "[Python FFI] Call failed\n");
+            }
+        } else {
+            if (PyErr_Occurred()) PyErr_Print();
+            fprintf(stderr, "[Python FFI] Cannot find function '%s'\n", func_name);
+        }
+        Py_XDECREF(pFunc);
+        Py_DECREF(pModule);
+    } else {
+        PyErr_Print();
+        fprintf(stderr, "[Python FFI] Failed to load 'ffi_python_plugin'\n");
+    }
+
+    Py_Finalize();
+}
+
 void call_ffi(uint8_t func_id) {
     switch (func_id) {
         case 0x01:
-            printf("[FFI] Hello from C function!\n");
+            printf("[C FFI] Hello from C function!\n");
             break;
         case 0x02:
-            printf("[FFI] Value in Register 0: %d\n", registers[0]);
+            printf("[C FFI] Value in Register 0: %d\n", registers[0]);
+            break;
+        case 0x10:
+            call_python_function("say_hello");
+            break;
+        case 0x11:
+            call_python_function("print_register0");
             break;
         default:
             printf("[FFI] Unknown external function: %d\n", func_id);
@@ -111,11 +158,11 @@ void execute() {
 }
 
 int main() {
-    // Example program: Load 99 into R0, call FFI function 1, call FFI function 2
+    // Example program: Load 42, call Python FFI
     uint8_t program[] = {
-        LOAD, 0x00, 99,       // LOAD R0, 99
-        CALL_FFI, 0x01,       // Call FFI function 1
-        CALL_FFI, 0x02,       // Call FFI function 2
+        LOAD, 0x00, 42,       // LOAD R0, 42
+        CALL_FFI, 0x10,       // Call Python function say_hello()
+        CALL_FFI, 0x11,       // Call Python function print_register0()
         HALT
     };
 
