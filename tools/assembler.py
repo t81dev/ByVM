@@ -19,6 +19,7 @@ OPCODES = {
     "META_REFLECT": 0xE2,
 }
 
+# Register mapping
 REGISTERS = {
     "R0": 0x00,
     "R1": 0x01,
@@ -38,6 +39,12 @@ def clean_token(token):
     """Strip trailing commas and whitespace from token"""
     return token.strip().strip(",")
 
+def strip_comments(line):
+    """Remove inline and full-line comments"""
+    if "//" in line:
+        line = line.split("//", 1)[0]
+    return line.strip()
+
 def parse_operand(operand, labels, pc):
     operand = clean_token(operand)
     operand = expand_constants(operand)
@@ -54,19 +61,14 @@ def parse_operand(operand, labels, pc):
 
 def is_comment_or_empty(line):
     """Check if line is a comment or empty"""
-    line = line.strip()
-    return (
-        not line or
-        line.startswith("//") or
-        (line.startswith("#") and not line.lstrip().lower().startswith("#define"))
-    )
+    return not line.strip()
 
 def first_pass(lines):
     """Record labels and constants"""
     labels = {}
     pc = 0
     for lineno, line in enumerate(lines, 1):
-        line = line.strip()
+        line = strip_comments(line)
         if is_comment_or_empty(line):
             continue
         if line.lstrip().lower().startswith("#define"):
@@ -92,7 +94,7 @@ def second_pass(lines, labels):
     program = []
     pc = 0
     for lineno, line in enumerate(lines, 1):
-        line = line.strip()
+        line = strip_comments(line)
         if is_comment_or_empty(line):
             continue
         if line.endswith(":"):  # Label line
