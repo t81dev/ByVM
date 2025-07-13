@@ -106,7 +106,7 @@ void execute() {
                 symbol_apply(id);
                 break;
             }
-            case META_REFLECT:
+            case META_REFLECT: {
                 meta_reflect();
                 break;
             }
@@ -115,14 +115,16 @@ void execute() {
                 call_ffi(func_id);
                 break;
             }
-            case HALT:
+            case HALT: {
                 running = 0;
                 break;
+            }
+
             default:
                 printf("Unknown opcode: %02X\n", opcode);
                 running = 0;
                 break;
-        
+        }  
     }
 }
 
